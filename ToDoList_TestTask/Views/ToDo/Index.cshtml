@@ -1,0 +1,116 @@
+﻿@model IEnumerable<ToDoList_TestTask.Models.ToDo>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<form class="createForm" method="post" action="/ToDo/Create">
+    <input name="Title" type="text" placeholder="Title" />
+    <textarea name="Description" placeholder="Description"></textarea>
+    <button type="submit">Create</button>
+</form>
+
+<table class="todo-list-table">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr data-id="@item.Id">
+                <td>
+                    <span class="title">@item.Title</span>
+                    <input class="editField editField__title" type="text" value="@item.Title" style="display:none;" />
+                </td>
+                <td>
+                    <span class="description">@item.Description</span>
+                    <input class="editField editField__description" type="text" value="@item.Description" style="display:none;" />
+                </td>
+                <td>
+                    <button class="changeStatus">@(item.IsCompleted ? "Completed" : "In Progress")</button>
+                </td>
+                <td>
+                    <button class="deleteButton">Delete</button>
+                    <button class="editButton">Edit</button>
+                    <button class="saveButton" style="display:none;">Save</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $(".editButton").click(function () {
+            var tr = $(this).closest('tr');
+            tr.find('.editField').show();
+            tr.find('span').hide();
+            $(this).hide();
+            tr.find('.saveButton').show();
+        });
+
+        $(".saveButton").click(function () {
+            var tr = $(this).closest('tr');
+            var id = tr.data('id');
+            var title = tr.find('td').eq(0).find('.editField__title').val();
+            var description = tr.find('td').eq(1).find('.editField__description').val();
+
+            $.ajax({
+                url: '/ToDo/Edit',
+                type: 'POST',
+                data: {
+                    id: id,
+                    title: title,
+                    description: description
+                },
+                success: function (response) {
+                    tr.find('.editField').hide();
+                    tr.find('.title').show().text(response.title);
+                    tr.find('.description').show().text(response.description);
+                    tr.find('.saveButton').hide();
+                    tr.find('.editButton').show();
+                }
+            });
+        });
+
+        $(".deleteButton").click(function () {
+            var tr = $(this).closest('tr');
+            var id = tr.data('id');
+
+            $.ajax({
+                url: '/ToDo/Delete',
+                type: 'POST',
+                data: {
+                    id: id
+                },
+                success: function (response) {
+                    tr.remove();
+                }
+            });
+        });
+
+        $(".changeStatus").click(function () {
+            var tr = $(this).closest('tr');
+            var id = tr.data('id');
+
+            $.ajax({
+                url: '/ToDo/ChangeStatus',
+                type: 'POST',
+                data: {
+                    id: id
+                },
+                success: (response) => {
+                    $(this).text(response.isCompleted ? "Completed" : "In Progress");
+                }
+            });
+        });
+
+
+    });
+</script>
